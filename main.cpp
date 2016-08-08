@@ -3,15 +3,12 @@
 
 #include <iostream>
 #include <thread>
-#include <functional>
+#include <streambuf>
+#include <tcpserver.h>
 
-
-#include <boost/asio.hpp>
 using namespace boost::asio;
 
-
-
-int main(int argc, char *argv[])
+int main(int, char**)
 {
 	//	QGuiApplication app(argc, argv);
 	//	QQmlApplicationEngine engine;
@@ -19,54 +16,27 @@ int main(int argc, char *argv[])
 
 
 	io_service service;
-	ip::tcp::acceptor acceptor(service, ip::tcp::endpoint(ip::tcp::v4(), 6666));
+	ServerTcp server(service, ip::tcp::endpoint(ip::tcp::v4(), 6666));
 
-	ip::tcp::socket sock(service);
-	char buff[1024];
-
-	std::function<void(boost::system::error_code, std::size_t)> onRead;
-	std::function<void(boost::system::error_code)> onAccept;
-
-	onRead = [&](boost::system::error_code err, std::size_t size)
+	server.setConnectedEventHandler([](std::shared_ptr<Client> client)
 	{
-		if(err)
-		{
-			std::cout << "Disconnected from " << sock.remote_endpoint().address().to_string() << std::endl;
-			sock.close();
-			acceptor.async_accept(sock, onAccept);
-		}
-		else
-		{
-
-			//test
-			std::cout.write(buff, size);
-			std::cout << std::endl;
-
-
-			sock.async_receive(buffer(buff,1024), onRead);
-		}
-	};
-
-	onAccept = [&](boost::system::error_code err)
+		std::cout << "New client: " << client->sock.remote_endpoint().address().to_string() << std::endl;
+	});
+	server.setReadEventHandler([](std::shared_ptr<Client> client, std::size_t)
 	{
-		if(err)
-		{
-			std::cout << err.message() << std::endl;
-			return;
-		}
-		std::cout << "New client: " << sock.remote_endpoint().address().to_string() << std::endl;
-		sock.async_receive(buffer(buff,1024), onRead);
-	};
+		std::cout << &client->buff << std::endl;
+	});
+	server.setDisconnectedEventHandler([](std::shared_ptr<Client> client, const boost::system::error_code&)
+	{
+		std::cout << "Disconnected: " << client->sock.remote_endpoint().address().to_string() << std::endl;
+	});
 
-	acceptor.async_accept(sock, onAccept);
-
-
-
+	server.setRegexCondition(boost::regex("s|k|\n|\r"));
+	server.start();
 
 	std::thread netservise([&](){service.run();});
-
-	//while(1);
-
+	while(1);
 	netservise.join();
-	return 0;//pp.exec();
+
+	return 0;//app.exec();
 }
