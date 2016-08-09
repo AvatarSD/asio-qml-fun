@@ -1,10 +1,13 @@
 TEMPLATE = app
 
 QT += qml quick
-CONFIG += c++11
+CONFIG += c++17
 
 SOURCES += main.cpp \
-    tcpserver.cpp
+    tcpserver.cpp \
+    uiprovider.cpp \
+    comanddispatcher.cpp \
+    commands.cpp
 
 RESOURCES += qml.qrc
 
@@ -19,4 +22,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    tcpserver.h
+    tcpserver.h \
+    uiprovider.h \
+    comanddispatcher.h \
+    commands.h

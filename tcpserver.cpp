@@ -10,10 +10,11 @@ ServerTcp::ServerTcp(boost::asio::io_service& service, boost::asio::ip::tcp::end
 	connected =    [](std::shared_ptr<Client>                                   ){};
 	disconnected = [](std::shared_ptr<Client>, const boost::system::error_code& ){};
 
-	cond.set_expression("\r|\n");
+	cond.set_expression("\\r|\\n|\\0");
 
 	clients.push_back(std::make_shared<Client>(_ioservise));
 }
+
 ServerTcp::~ServerTcp()
 {
 
@@ -80,7 +81,7 @@ void ServerTcp::setMaxClients(std::size_t maxVal)
 	maxClients = maxVal;
 }
 
-void ServerTcp::setRegexCondition(const boost::regex& x)
+void ServerTcp::setReadUntilCondition(const boost::regex& x)
 {
 	cond = x;
 }

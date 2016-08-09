@@ -28,7 +28,7 @@ public:
 	void stop();
 
 	void setMaxClients(std::size_t);
-	void setRegexCondition(const boost::regex &x);
+	void setReadUntilCondition(const boost::regex &x);
 
 private:
 	std::function<void(std::shared_ptr<Client>, std::size_t)> read;
