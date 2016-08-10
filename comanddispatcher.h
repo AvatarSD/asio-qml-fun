@@ -3,7 +3,7 @@
 
 #include <boost/regex.hpp>
 #include <boost/asio.hpp>
-#include <streambuf>
+#include <tcpserver.h>
 
 class Command
 {
