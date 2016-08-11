@@ -1,10 +1,10 @@
 #include "comanddispatcher.h"
 #include <algorithm>
 #include <boost/asio.hpp>
-#include <boost/iostreams/filter/regex.hpp>
+#include <boost/regex.hpp>
 #include <iostream>
 
-using namespace boost::iostreams;
+#include <chrono>
 
 CommandDispatcher::CommandDispatcher()
 {
@@ -16,6 +16,11 @@ CommandDispatcher::~CommandDispatcher()
 
 }
 
+void CommandDispatcher::setRegex(const boost::regex& expression)
+{
+	exp = expression;
+}
+
 void CommandDispatcher::registerCommand(Command* command)
 {
 	auto end = registeredCommands.end();
@@ -25,9 +30,9 @@ void CommandDispatcher::registerCommand(Command* command)
 	registeredCommands.push_back(CommandSPtr(command));
 }
 
-void CommandDispatcher::run(const std::string& cmd, const std::string& args)
+void CommandDispatcher::run(Command* command, const std::string& args)
 {
-	std::cout << "new cmd: " << cmd << ", arg is: " << args << std::endl;
+	//std::cout << "new cmd: " << cmd << ", arg is: " << args << std::endl;
 
 
 
@@ -36,42 +41,58 @@ void CommandDispatcher::run(const std::string& cmd, const std::string& args)
 
 }
 
-void CommandDispatcher::dispatch(std::streambuf& indata)
+void CommandDispatcher::dispatch(boost::match_results<streambuf_iterator> res)
 {
-	if (registeredCommands.empty() || !indata.in_avail())
+	std::cout << "-----------------------" << std::endl;
+	int i = 0;
+	std::for_each(res.begin(), res.end(), [&](const boost::sub_match<streambuf_iterator> & sub)
+	{ std::cout << i++ << ": " << sub << std::endl;});
+	std::cout << "-----------------------" << std::endl;
+
+
+
+
+
+
+}
+
+void CommandDispatcher::operator ()(boost::asio::streambuf& indata)
+{
+	if (registeredCommands.empty() || !indata.size())
 		return;
 
-	boost::regex exp("(?:\\r|\\n|\\0|\\A|^)*(\\w+)\\s*(\\P{cntrl}*)\\s*(?:\\r|\\n){1,2}");
-	std::string str((std::istreambuf_iterator<char>(&indata)), std::istreambuf_iterator<char>());
-	boost::smatch res;;
-
 	/***************/
-	std::cout << "\r\n---------INIT-----------\r\n" << std::endl;
+	std::cout << "\r\n---------INIT-----------" << std::endl;
 	std::cout << exp.expression() << std::endl;
-	std::cout << "raw: " << str << std::endl;
+	//std::cout << "raw: " << &indata << std::endl;
 	/***************/
 
-	int y = 0;
-	while(boost::regex_search(str, res, exp))
-	{
-		std::cout << "-----------------------\r\nres: " << y << ",  data:" << res << std::endl;
-		int i = 0;
-		std::for_each(res.begin(), res.end(), [&](const std::string::const_iterator & it)
-		{
-			std::string cmd;
-			std::move(it.first, it.second, std::back_inserter(cmd));
-			std::cout << i++ << ": " << cmd << std::endl;
-		});
-		std::cout << "-----------------------\r\n" << std::endl;
+	auto begin = std::chrono::system_clock::now();
 
+	//	boost::regex_iterator<streambuf_iterator> m1(boost::asio::buffers_begin(indata.data()), boost::asio::buffers_end(indata.data()), exp);
+	//	boost::regex_iterator<streambuf_iterator> m2;
+	//	streambuf_iterator last = boost::asio::buffers_begin(indata.data());
+	//	std::for_each(m1, m2, [&](const boost::match_results<streambuf_iterator> & res){
+	//		dispatch(res);
+	//		last = res.suffix().first;
+	//	});
+	//	indata.consume(std::distance(boost::asio::buffers_begin(indata.data()), last));
+
+
+	boost::match_results<streambuf_iterator> res;
+	while(boost::regex_search(boost::asio::buffers_begin(indata.data()), boost::asio::buffers_end(indata.data()), res, exp))
+	{
+		dispatch(res);
+		indata.consume(std::distance(boost::asio::buffers_begin(indata.data()), res.suffix().first));
 	};
 
-	//		std::string cmd, args;
-	//		std::move(res[1].first, res[1].second, std::back_inserter(cmd));
-	//		std::move(res[2].first, res[2].second, std::back_inserter(args));
-	//		run(cmd, args);
+	auto end = std::chrono::system_clock::now();
+	std::chrono::duration<double> elapsed_seconds = (end-begin);
+	std::cout << "elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
 
+	//	for(auto it = boost::asio::buffers_begin(indata.data()); it != boost::asio::buffers_end(indata.data()); it++)
+	//		std::cout << ":" << *it << std::endl;
 
-
+	std::cout << "\r\n---------END-----------\r\n" << std::endl;
 }
 

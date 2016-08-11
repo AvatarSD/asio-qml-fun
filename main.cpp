@@ -19,13 +19,14 @@ int main(int argv, char** argc)
 
 
 	CommandDispatcher dispatcher;
+	dispatcher.setRegex(boost::regex("(?:\\r|\\n|\\0|\\A|^)*(\\w+)\\s*(\\P{cntrl}*)\\s*(?:\\r|\\n){2,}"));
 	dispatcher.registerCommand(new QtIvokeMethod(engine.findChildren<QObject*>()));
 
 
 	io_service service;
 	ServerTcp server(service, ip::tcp::endpoint(ip::tcp::v4(), 6666));
 
-	server.setReadEventHandler([&](std::shared_ptr<Client> client, std::size_t){dispatcher.dispatch(client->buff);});
+	server.setReadEventHandler([&](std::shared_ptr<Client> client, std::size_t){dispatcher(client->buff);});
 	server.setConnectedEventHandler([](std::shared_ptr<Client> client)
 	{
 		std::cout << "New client: " << client->sock.remote_endpoint().address().to_string() << std::endl;
