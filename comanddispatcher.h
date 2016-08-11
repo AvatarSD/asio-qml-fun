@@ -15,7 +15,7 @@ public:
 
 	virtual boost::regex getRegex() = 0;
 	virtual std::string getName() = 0;
-	virtual void execute(const std::vector<std::string>& args) = 0;
+	virtual void execute(std::shared_ptr<Client> client, const std::vector<std::string>& args) = 0;
 };
 
 class CommandDispatcher
@@ -31,9 +31,9 @@ public:
 	void setRegex(const boost::regex & expression);
 
 	void registerCommand(Command* command);
-	void run(Command* command, const std::string& args); // call command
-	void dispatch(boost::match_results<streambuf_iterator> res);
-	void operator ()(boost::asio::streambuf&); //dispatch parse arguments
+	void run(std::shared_ptr<Client> client, CommandSPtr command, const std::vector<std::string>& args); // call command
+	void dispatch(boost::match_results<streambuf_iterator> res, std::shared_ptr<Client> client);
+	void operator ()(std::shared_ptr<Client> client); //dispatch parse arguments
 
 	// possibly include isRegistered, unregisterCommand, etc.
 

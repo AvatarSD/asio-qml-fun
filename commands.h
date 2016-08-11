@@ -19,7 +19,7 @@ private:
 	// Command interface
 public:
 	boost::regex getRegex() override;
-	void execute(const std::vector<std::__cxx11::string>& args) override;
+	void execute(std::shared_ptr<Client> client, const std::vector<std::string>& args) override;
 	std::string getName() override;
 };
 

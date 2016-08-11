@@ -8,7 +8,7 @@
 
 CommandDispatcher::CommandDispatcher()
 {
-
+	setRegex(boost::regex("(?:\\r|\\n|\\0|\\A|^)*(\\w+)\\s*(\\P{cntrl}*)\\s*(?:\\r|\\n){2,}"));
 }
 
 CommandDispatcher::~CommandDispatcher()
@@ -30,69 +30,47 @@ void CommandDispatcher::registerCommand(Command* command)
 	registeredCommands.push_back(CommandSPtr(command));
 }
 
-void CommandDispatcher::run(Command* command, const std::string& args)
+void CommandDispatcher::operator ()(std::shared_ptr<Client> client)
+{
+	if (registeredCommands.empty() || !client->buff.size())
+		return;
+
+	boost::match_results<streambuf_iterator> res;
+	while(boost::regex_search(boost::asio::buffers_begin(client->buff.data()), boost::asio::buffers_end(client->buff.data()), res, exp))
+	{
+		dispatch(res, client);
+		client->buff.consume(std::distance(boost::asio::buffers_begin(client->buff.data()), res.suffix().first));
+	};
+
+}
+
+void CommandDispatcher::dispatch(boost::match_results<streambuf_iterator> res, std::shared_ptr<Client> client)
+{
+	//	std::cout << "-----------------------" << std::endl;
+	//	int i = 0;
+	//	std::for_each(res.begin(), res.end(), [&](const boost::sub_match<streambuf_iterator> & sub)
+	//	{ std::cout << i++ << ": " << sub << std::endl;});
+	//	std::cout << "-----------------------" << std::endl;
+
+	auto seq = res.begin();
+	for(auto sub : registeredCommands)
+		if(sub->getName() == *(++seq))
+		{
+			std::vector<std::string> args;
+			std::for_each(++seq, res.end(), [&](const auto & sub){ args.push_back(sub);});
+			run(client, sub, args);
+		}
+}
+
+void CommandDispatcher::run(std::shared_ptr<Client> client, CommandSPtr command, const std::vector<std::string>& args)
 {
 	//std::cout << "new cmd: " << cmd << ", arg is: " << args << std::endl;
 
+	//std::count << command->getName() << ":" << std::endl;
+	//for(auto arg : args)
+	//	std::cout << " -" << arg << std::endl;
 
-
-
-
-
-}
-
-void CommandDispatcher::dispatch(boost::match_results<streambuf_iterator> res)
-{
-	std::cout << "-----------------------" << std::endl;
-	int i = 0;
-	std::for_each(res.begin(), res.end(), [&](const boost::sub_match<streambuf_iterator> & sub)
-	{ std::cout << i++ << ": " << sub << std::endl;});
-	std::cout << "-----------------------" << std::endl;
-
-
-
-
+	command->execute(client, args);
 
 
 }
-
-void CommandDispatcher::operator ()(boost::asio::streambuf& indata)
-{
-	if (registeredCommands.empty() || !indata.size())
-		return;
-
-	/***************/
-	std::cout << "\r\n---------INIT-----------" << std::endl;
-	std::cout << exp.expression() << std::endl;
-	//std::cout << "raw: " << &indata << std::endl;
-	/***************/
-
-	auto begin = std::chrono::system_clock::now();
-
-	//	boost::regex_iterator<streambuf_iterator> m1(boost::asio::buffers_begin(indata.data()), boost::asio::buffers_end(indata.data()), exp);
-	//	boost::regex_iterator<streambuf_iterator> m2;
-	//	streambuf_iterator last = boost::asio::buffers_begin(indata.data());
-	//	std::for_each(m1, m2, [&](const boost::match_results<streambuf_iterator> & res){
-	//		dispatch(res);
-	//		last = res.suffix().first;
-	//	});
-	//	indata.consume(std::distance(boost::asio::buffers_begin(indata.data()), last));
-
-
-	boost::match_results<streambuf_iterator> res;
-	while(boost::regex_search(boost::asio::buffers_begin(indata.data()), boost::asio::buffers_end(indata.data()), res, exp))
-	{
-		dispatch(res);
-		indata.consume(std::distance(boost::asio::buffers_begin(indata.data()), res.suffix().first));
-	};
-
-	auto end = std::chrono::system_clock::now();
-	std::chrono::duration<double> elapsed_seconds = (end-begin);
-	std::cout << "elapsed time: " << elapsed_seconds.count() << "s" << std::endl;
-
-	//	for(auto it = boost::asio::buffers_begin(indata.data()); it != boost::asio::buffers_end(indata.data()); it++)
-	//		std::cout << ":" << *it << std::endl;
-
-	std::cout << "\r\n---------END-----------\r\n" << std::endl;
-}
-
