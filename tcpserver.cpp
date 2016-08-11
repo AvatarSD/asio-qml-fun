@@ -2,25 +2,25 @@
 #include <algorithm>
 
 
-ServerTcp::ServerTcp(boost::asio::io_service& service, boost::asio::ip::tcp::endpoint ep) :
+TcpServer::TcpServer(boost::asio::io_service& service, boost::asio::ip::tcp::endpoint ep) :
 	_ioservise(&service), acceptor(service, ep)
 {
 	maxClients = 1;
-	read =         [](std::shared_ptr<Client>, std::size_t                      ){};
-	connected =    [](std::shared_ptr<Client>                                   ){};
-	disconnected = [](std::shared_ptr<Client>, const boost::system::error_code& ){};
+	read =         [](pClient, std::size_t                      ){};
+	connected =    [](pClient                                   ){};
+	disconnected = [](pClient, const boost::system::error_code& ){};
 
 	cond.set_expression("\\r|\\n|\\0");
 
 	clients.push_back(std::make_shared<Client>(_ioservise));
 }
 
-ServerTcp::~ServerTcp()
+TcpServer::~TcpServer()
 {
 
 }
 
-void ServerTcp::onRead (std::shared_ptr<Client> client, boost::system::error_code err, std::size_t size)
+void TcpServer::onRead (pClient client, boost::system::error_code err, std::size_t size)
 {
 	if(err)
 	{
@@ -28,7 +28,7 @@ void ServerTcp::onRead (std::shared_ptr<Client> client, boost::system::error_cod
 			disconnected(client, err);
 		client->sock.close();
 		if(clients.size() == 1)
-			acceptor.async_accept(client->sock, std::bind(&ServerTcp::onAccept, this, client, std::placeholders::_1));
+			acceptor.async_accept(client->sock, std::bind(&TcpServer::onAccept, this, client, std::placeholders::_1));
 		else
 			clients.remove(client);
 		return;
@@ -37,10 +37,10 @@ void ServerTcp::onRead (std::shared_ptr<Client> client, boost::system::error_cod
 	if(read)
 		read(client, size);
 
-	boost::asio::async_read_until(client->sock, client->buff, cond, std::bind(&ServerTcp::onRead, this, client, std::placeholders::_1, std::placeholders::_2));
+	boost::asio::async_read_until(client->sock, client->buff, cond, std::bind(&TcpServer::onRead, this, client, std::placeholders::_1, std::placeholders::_2));
 }
 
-void ServerTcp::onAccept (std::shared_ptr<Client> client, boost::system::error_code err)
+void TcpServer::onAccept (pClient client, boost::system::error_code err)
 {
 	if(err)
 		throw err;
@@ -50,24 +50,24 @@ void ServerTcp::onAccept (std::shared_ptr<Client> client, boost::system::error_c
 
 	if(clients.size() < maxClients)
 	{
-		std::shared_ptr<Client> newClient(new Client(_ioservise));
+		pClient newClient(new Client(_ioservise));
 		clients.push_back(newClient);
-		acceptor.async_accept(newClient->sock, std::bind(&ServerTcp::onAccept, this, newClient, std::placeholders::_1));
+		acceptor.async_accept(newClient->sock, std::bind(&TcpServer::onAccept, this, newClient, std::placeholders::_1));
 
 	}
 
-	boost::asio::async_read_until(client->sock, client->buff, cond, std::bind(&ServerTcp::onRead, this, client, std::placeholders::_1, std::placeholders::_2));
+	boost::asio::async_read_until(client->sock, client->buff, cond, std::bind(&TcpServer::onRead, this, client, std::placeholders::_1, std::placeholders::_2));
 }
 
-void ServerTcp::start()
+void TcpServer::start()
 {
 	stop();
-	acceptor.async_accept(clients.front()->sock, std::bind(&ServerTcp::onAccept, this, clients.front(), std::placeholders::_1));
+	acceptor.async_accept(clients.front()->sock, std::bind(&TcpServer::onAccept, this, clients.front(), std::placeholders::_1));
 }
 
-void ServerTcp::stop()
+void TcpServer::stop()
 {
-	std::remove_if(clients.begin(), clients.end(), [&](std::shared_ptr<Client> &t)
+	std::remove_if(clients.begin(), clients.end(), [&](pClient &t)
 	{
 		t->sock.close();
 		if(clients.size() > 1)
@@ -76,27 +76,27 @@ void ServerTcp::stop()
 	});
 }
 
-void ServerTcp::setMaxClients(std::size_t maxVal)
+void TcpServer::setMaxClients(std::size_t maxVal)
 {
 	maxClients = maxVal;
 }
 
-void ServerTcp::setReadUntilCondition(const boost::regex& x)
+void TcpServer::setReadUntilCondition(const boost::regex& x)
 {
 	cond = x;
 }
 
-void ServerTcp::setReadEventHandler(std::function<void(std::shared_ptr<Client>, std::size_t)> _read)
+void TcpServer::setReadEventHandler(std::function<void(pClient, std::size_t)> _read)
 {
 	read = _read;
 }
 
-void ServerTcp::setConnectedEventHandler(std::function<void(std::shared_ptr<Client>)> _connected)
+void TcpServer::setConnectedEventHandler(std::function<void(pClient)> _connected)
 {
 	connected = _connected;
 }
 
-void ServerTcp::setDisconnectedEventHandler(std::function<void(std::shared_ptr<Client>, const boost::system::error_code&)> _disconnected)
+void TcpServer::setDisconnectedEventHandler(std::function<void(pClient, const boost::system::error_code&)> _disconnected)
 {
 	disconnected = _disconnected;
 }

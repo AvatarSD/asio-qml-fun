@@ -7,6 +7,7 @@
 #include <boost/asio.hpp>
 #include <boost/regex.hpp>
 
+
 struct Client
 {
 	Client(boost::asio::io_service * servise) : sock(*servise) {}
@@ -14,15 +15,18 @@ struct Client
 	boost::asio::streambuf buff;
 };
 
-class ServerTcp
+class TcpServer
 {
 public:
-	ServerTcp(boost::asio::io_service&, boost::asio::ip::tcp::endpoint);
-	~ServerTcp();
 
-	void setReadEventHandler(std::function<void(std::shared_ptr<Client>, std::size_t)>);
-	void setConnectedEventHandler(std::function<void(std::shared_ptr<Client>)>);
-	void setDisconnectedEventHandler(std::function<void(std::shared_ptr<Client>, const boost::system::error_code&)>);
+typedef std::shared_ptr<Client> pClient;
+
+	TcpServer(boost::asio::io_service&, boost::asio::ip::tcp::endpoint);
+	~TcpServer();
+
+	void setReadEventHandler(std::function<void(pClient, std::size_t)>);
+	void setConnectedEventHandler(std::function<void(pClient)>);
+	void setDisconnectedEventHandler(std::function<void(pClient, const boost::system::error_code&)>);
 
 	void start();
 	void stop();
@@ -31,18 +35,21 @@ public:
 	void setReadUntilCondition(const boost::regex &x);
 
 private:
-	std::function<void(std::shared_ptr<Client>, std::size_t)> read;
-	std::function<void(std::shared_ptr<Client>)> connected;
-	std::function<void(std::shared_ptr<Client>, const boost::system::error_code&)> disconnected;
+	std::function<void(pClient, std::size_t)> read;
+	std::function<void(pClient)> connected;
+	std::function<void(pClient, const boost::system::error_code&)> disconnected;
 
 	boost::asio::io_service * _ioservise;
 	boost::asio::ip::tcp::acceptor acceptor;
-	std::list<std::shared_ptr<Client> > clients;
+	std::list<pClient > clients;
 	std::size_t maxClients;
 	boost::regex cond;
 
-	void onAccept (std::shared_ptr<Client>, boost::system::error_code err);
-	void onRead (std::shared_ptr<Client>, boost::system::error_code err, std::size_t size);
+	void onAccept (pClient, boost::system::error_code err);
+	void onRead (pClient, boost::system::error_code err, std::size_t size);
 };
+
+typedef TcpServer::pClient pClient;
+
 
 #endif // TCPSERVER_H

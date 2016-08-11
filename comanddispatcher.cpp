@@ -4,11 +4,12 @@
 #include <boost/regex.hpp>
 #include <iostream>
 
-#include <chrono>
 
-CommandDispatcher::CommandDispatcher()
+CommandDispatcher::CommandFactoryMap CommandDispatcher::registeredCommands;
+
+CommandDispatcher::CommandDispatcher(pClient clt) : Dispatcher(clt, boost::regex("(?:\\r|\\n|\\0|\\A|^)*(\\w+)\\s*(\\P{cntrl}*)\\s*(?:\\r|\\n){2,}"))
 {
-	setRegex(boost::regex("(?:\\r|\\n|\\0|\\A|^)*(\\w+)\\s*(\\P{cntrl}*)\\s*(?:\\r|\\n){2,}"));
+
 }
 
 CommandDispatcher::~CommandDispatcher()
@@ -16,61 +17,22 @@ CommandDispatcher::~CommandDispatcher()
 
 }
 
-void CommandDispatcher::setRegex(const boost::regex& expression)
+void CommandDispatcher::dispatch(boost::match_results<streambuf_iterator> res)
 {
-	exp = expression;
-}
-
-void CommandDispatcher::registerCommand(Command* command)
-{
-	auto end = registeredCommands.end();
-	auto found = std::find_if(registeredCommands.begin(), end, [&](const CommandSPtr& cmd){return (cmd->getName() == command->getName());});
-	if(end != found)
-		registeredCommands.erase(found);
-	registeredCommands.push_back(CommandSPtr(command));
-}
-
-void CommandDispatcher::operator ()(std::shared_ptr<Client> client)
-{
-	if (registeredCommands.empty() || !client->buff.size())
+	if(res.size() < 2)
 		return;
 
-	boost::match_results<streambuf_iterator> res;
-	while(boost::regex_search(boost::asio::buffers_begin(client->buff.data()), boost::asio::buffers_end(client->buff.data()), res, exp))
-	{
-		dispatch(res, client);
-		client->buff.consume(std::distance(boost::asio::buffers_begin(client->buff.data()), res.suffix().first));
-	};
+	auto sub = registeredCommands.find(res[1]);
+	if(sub != registeredCommands.end())
+		if(sub->first == res[1])
+			run(pCommand(sub->second(client)), res[2]);
 
 }
 
-void CommandDispatcher::dispatch(boost::match_results<streambuf_iterator> res, std::shared_ptr<Client> client)
+void CommandDispatcher::run(pCommand command, const std::string& args)
 {
-	//	std::cout << "-----------------------" << std::endl;
-	//	int i = 0;
-	//	std::for_each(res.begin(), res.end(), [&](const boost::sub_match<streambuf_iterator> & sub)
-	//	{ std::cout << i++ << ": " << sub << std::endl;});
-	//	std::cout << "-----------------------" << std::endl;
 
-	auto seq = res.begin();
-	for(auto sub : registeredCommands)
-		if(sub->getName() == *(++seq))
-		{
-			std::vector<std::string> args;
-			std::for_each(++seq, res.end(), [&](const auto & sub){ args.push_back(sub);});
-			run(client, sub, args);
-		}
-}
-
-void CommandDispatcher::run(std::shared_ptr<Client> client, CommandSPtr command, const std::vector<std::string>& args)
-{
-	//std::cout << "new cmd: " << cmd << ", arg is: " << args << std::endl;
-
-	//std::count << command->getName() << ":" << std::endl;
-	//for(auto arg : args)
-	//	std::cout << " -" << arg << std::endl;
-
-	command->execute(client, args);
+	command->execute(args);
 
 
 }

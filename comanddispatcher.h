@@ -1,45 +1,47 @@
 #ifndef COMANDDISPATCHER_H
 #define COMANDDISPATCHER_H
 
-#include <boost/regex.hpp>
-#include <boost/asio.hpp>
-#include <tcpserver.h>
-
-
+#include <functional>
+#include <dispatcher.h>
 
 class Command
 {
 public:
-	Command() {}
-	virtual ~Command(void) {}
+	Command(pClient clt) : client(clt) {}
+	virtual ~Command() {}
 
-	virtual boost::regex getRegex() = 0;
-	virtual std::string getName() = 0;
-	virtual void execute(std::shared_ptr<Client> client, const std::vector<std::string>& args) = 0;
+	virtual void execute(const std::string& args) = 0;
+
+protected:
+	pClient client;
 };
 
-class CommandDispatcher
+class CommandDispatcher : public Dispatcher
 {
 public:
-	typedef std::shared_ptr<Command> CommandSPtr;
-	typedef std::list<CommandSPtr> CommandMap;
-	typedef boost::asio::buffers_iterator<boost::asio::streambuf::const_buffers_type> streambuf_iterator;
+	typedef std::shared_ptr<Command> pCommand;
+	typedef std::map<std::string, std::function<Command*(pClient)> > CommandFactoryMap;
 
-	CommandDispatcher();
+	CommandDispatcher(pClient client);
 	~CommandDispatcher();
 
-	void setRegex(const boost::regex & expression);
-
-	void registerCommand(Command* command);
-	void run(std::shared_ptr<Client> client, CommandSPtr command, const std::vector<std::string>& args); // call command
-	void dispatch(boost::match_results<streambuf_iterator> res, std::shared_ptr<Client> client);
-	void operator ()(std::shared_ptr<Client> client); //dispatch parse arguments
-
-	// possibly include isRegistered, unregisterCommand, etc.
+	template<class T> static bool registerCommand();
 
 private:
-	CommandMap registeredCommands;
-	boost::regex exp;
+	static CommandFactoryMap registeredCommands;
+	void run(pCommand command, const std::string& args = ""); // call command
+	void dispatch(boost::match_results<streambuf_iterator> res);
+
 };
+
+template<class T>
+bool CommandDispatcher::registerCommand()
+{
+	CommandFactoryMap::iterator it = registeredCommands.find(T::getName());
+	if(it != registeredCommands.end())
+		return false;
+	registeredCommands[T::getName()] = [](pClient client)->Command*{return new T(client);};
+	return true;
+}
 
 #endif // COMANDDISPATCHER_H

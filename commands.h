@@ -7,21 +7,30 @@
 #include <QList>
 #include <boost/regex.h>
 
-class QtIvokeMethod : public Command
+class QtMananger : public Command
 {
 public:
-	QtIvokeMethod(const QList<QObject*> & objects) : Command(), rootObjects(objects){}
-	virtual ~QtIvokeMethod() {}
+	QtMananger(pClient client) : Command(client){}
+	virtual ~QtMananger() {}
 
-private:
-	QList<QObject*> rootObjects;
+	static std::string getName();
+	static void setRoot(QObject* root){rootObject = root;}
 
 	// Command interface
-public:
-	boost::regex getRegex() override;
-	void execute(std::shared_ptr<Client> client, const std::vector<std::string>& args) override;
-	std::string getName() override;
+	void execute(const std::string& args) override;
+
+private:
+	static QObject* rootObject;
+
+	void setProperty(std::string name, std::string property, std::string value);
+	void getObjectTree();
+	void getProperty(std::string);
+	void invokeMethod(std::string, std::string);
+
+
 };
+
+
 
 
 

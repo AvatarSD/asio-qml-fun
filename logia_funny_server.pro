@@ -7,7 +7,9 @@ SOURCES += main.cpp \
     tcpserver.cpp \
     uiprovider.cpp \
     comanddispatcher.cpp \
-    commands.cpp
+    commands.cpp \
+    dispatcher.cpp \
+    qtinvokedispatcher.cpp
 
 RESOURCES += qml.qrc
 
@@ -25,4 +27,8 @@ HEADERS += \
     tcpserver.h \
     uiprovider.h \
     comanddispatcher.h \
-    commands.h
+    commands.h \
+    dispatcher.h \
+    qtinvokedispatcher.h
+
+DISTFILES +=
