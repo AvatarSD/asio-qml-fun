@@ -25,10 +25,18 @@ Window {
         rect.dich = false;
     }
 
+    function back(msg)
+    {
+        rect.randcolor = false;
+        if(msg)
+            rect.textcolor = msg;
+        else
+            rect.textcolor = "#ffffff";
+    }
     function color(msg)
     {
         rect.randcolor = false;
-        rect.textcolor = "#ffffff"
+        //rect.textcolor = "#ffffff"
         if(msg)
             rect.color = msg;
         else
