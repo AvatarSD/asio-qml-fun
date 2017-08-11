@@ -21,9 +21,6 @@ int main(int argv, char** argc)
 	QQmlEngine engine;
 	QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
 
-
-	//	CommandDispatcher::registerCommand<QtMananger>();
-	//	QtMananger::setRoot(component.create());
 	QtInvokeDispatcher::setRootObject(component.create());
 
 	io_service service;
@@ -46,4 +43,3 @@ int main(int argv, char** argc)
 
 	std::thread netservise([&](){service.run();});
 	app.exec();
-}
