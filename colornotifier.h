@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QColor>
 #include <QMutex>
+#include <QString>
 
 class ColorNotifier : public QObject
 {
@@ -24,5 +25,17 @@ private:
     QMutex textColMutex, backColMutex;
 
 };
+
+
+class SerialNotifier
+{
+public:
+    SerialNotifier(const ColorNotifier & notifier, QString port);
+
+private:
+
+};
+
+
 
 #endif // COLORNOTIFIER_H
