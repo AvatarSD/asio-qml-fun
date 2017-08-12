@@ -9,7 +9,8 @@ SOURCES += main.cpp \
     comanddispatcher.cpp \
     commands.cpp \
     dispatcher.cpp \
-    qtinvokedispatcher.cpp
+    qtinvokedispatcher.cpp \
+    colornotifier.cpp
 
 RESOURCES += qml.qrc
 
@@ -29,6 +30,7 @@ HEADERS += \
     comanddispatcher.h \
     commands.h \
     dispatcher.h \
-    qtinvokedispatcher.h
+    qtinvokedispatcher.h \
+    colornotifier.h
 
 DISTFILES +=

@@ -12,6 +12,8 @@
 
 #include <qtinvokedispatcher.h>
 
+#include <colornotifier.h>
+
 using namespace boost::asio;
 
 int main(int argv, char** argc)
@@ -20,8 +22,11 @@ int main(int argv, char** argc)
 
 	QQmlEngine engine;
 	QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
-
 	QtInvokeDispatcher::setRootObject(component.create());
+
+    ColorNotifier * colorNotifier = new ColorNotifier();
+    QObject::connect(&component, SIGNAL(colorChanged(QColor)), colorNotifier, SLOT(setColor(QColor)));
+    QObject::connect(&component, SIGNAL(backcolChanged(QColor)), colorNotifier, SLOT(setBack(QColor)));
 
 	io_service service;
 	TcpServer server(service, ip::tcp::endpoint(ip::tcp::v4(), 6666));
@@ -43,3 +48,4 @@ int main(int argv, char** argc)
 
 	std::thread netservise([&](){service.run();});
 	app.exec();
+}

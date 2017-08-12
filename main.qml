@@ -9,6 +9,10 @@ Window {
     height: 480
 
     title: "S.D."
+    id: mainrect
+
+    signal colorChanged(color col)
+    signal backcolChanged(color col)
 
     function text(msg)
     {
@@ -79,6 +83,8 @@ Window {
         property bool randcolor: false
         property bool dich: false
 
+        onColorChanged: backcolChanged(rect.color)
+
 
         anchors.fill: parent
         visible: true;
@@ -96,6 +102,7 @@ Window {
             text: rect.text
             font.pixelSize: (parent.height*rect.size)/10
             visible: false;
+            onColorChanged: colorChanged(fdm.color)
         }
 
         Text {
