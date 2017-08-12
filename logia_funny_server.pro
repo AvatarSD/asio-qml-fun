@@ -1,6 +1,6 @@
 TEMPLATE = app
 
-QT += qml quick
+QT += qml quick serialport
 CONFIG += c++14
 
 SOURCES += main.cpp \

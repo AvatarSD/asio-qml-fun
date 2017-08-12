@@ -63,8 +63,11 @@ int main(int argv, char** argc)
     parser.addOption(portOption);
     /* option parsing */
     parser.process(app);
-    if(parser.isSet(portOption))
+    if(parser.isSet(portOption)){
         std::cout << "port set: " << parser.value(portOption).toStdString() << std::endl;
+        SerialNotifier * serialnotifier = new SerialNotifier(colorNotifier, parser.value(portOption));
+        std::thread([&](){serialnotifier->run();});
+    }
     else
         std::cout << "port not set" << std::endl;
 

@@ -5,6 +5,7 @@
 #include <QColor>
 #include <QMutex>
 #include <QString>
+#include <QByteArray>
 
 class ColorNotifier : public QObject
 {
@@ -30,10 +31,14 @@ private:
 class SerialNotifier
 {
 public:
-    SerialNotifier(const ColorNotifier & notifier, QString port);
+    SerialNotifier(ColorNotifier * notifier, const QString & port);
+    void run();
 
 private:
+    QByteArray makeCmd();
 
+    ColorNotifier * notifier;
+    QString port;
 };
 
 
