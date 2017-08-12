@@ -9,10 +9,11 @@ Window {
     height: 480
 
     title: "S.D."
-    id: mainrect
 
-    signal colorChanged(color col)
-    signal backcolChanged(color col)
+    signal textColorChanged(color col)
+    signal backColorChanged(color col)
+
+    Component.onCompleted: rect.setrandcolor()
 
     function text(msg)
     {
@@ -83,8 +84,8 @@ Window {
         property bool randcolor: false
         property bool dich: false
 
-        onColorChanged: backcolChanged(rect.color)
-
+        onColorChanged: backColorChanged(rect.color)
+        onTextcolorChanged: textColorChanged(rect.textcolor)
 
         anchors.fill: parent
         visible: true;
@@ -93,7 +94,6 @@ Window {
             rect.color = Qt.rgba(Math.random(),Math.random(),Math.random(),1);
             rect.textcolor = Qt.rgba(Math.random(),Math.random(),Math.random(),1);
         }
-        Component.onCompleted: setrandcolor()
 
         Text {
             id: fdm
@@ -102,7 +102,6 @@ Window {
             text: rect.text
             font.pixelSize: (parent.height*rect.size)/10
             visible: false;
-            onColorChanged: colorChanged(fdm.color)
         }
 
         Text {

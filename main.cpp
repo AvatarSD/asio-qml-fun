@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include <qtinvokedispatcher.h>
+#include <QQuickWindow>
 
 #include <colornotifier.h>
 
@@ -22,11 +23,13 @@ int main(int argv, char** argc)
 
 	QQmlEngine engine;
 	QQmlComponent component(&engine, QUrl(QStringLiteral("qrc:/main.qml")));
-	QtInvokeDispatcher::setRootObject(component.create());
+    QQuickWindow *window = qobject_cast<QQuickWindow *>(component.create());
+    QtInvokeDispatcher::setRootObject(window);
+
 
     ColorNotifier * colorNotifier = new ColorNotifier();
-    QObject::connect(&component, SIGNAL(colorChanged(QColor)), colorNotifier, SLOT(setColor(QColor)));
-    QObject::connect(&component, SIGNAL(backcolChanged(QColor)), colorNotifier, SLOT(setBack(QColor)));
+    QObject::connect(window, SIGNAL(textColorChanged(QColor)), colorNotifier, SLOT(setColor(QColor)));
+    QObject::connect(window, SIGNAL(backColorChanged(QColor)), colorNotifier, SLOT(setBack(QColor)));
 
 	io_service service;
 	TcpServer server(service, ip::tcp::endpoint(ip::tcp::v4(), 6666));

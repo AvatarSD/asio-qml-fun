@@ -1,17 +1,17 @@
 #include "colornotifier.h"
-#include <QDebug>
+#include <iostream>
 
 ColorNotifier::ColorNotifier(QObject *parent) : QObject(parent)
 {
 
 }
 
-void ColorNotifier::setColor(QColor color)
+void ColorNotifier::setColor(const QColor & color)
 {
-    qDebug() << "col: " << color.red() << ":" << color.green() << ":" << color.blue();
+    std::cout << "col: " << color.red() << ":" << color.green() << ":" << color.blue() << std::endl;
 }
 
-void ColorNotifier::setBack(QColor color)
+void ColorNotifier::setBack(const QColor & color)
 {
-    qDebug() << "bck: " << color.red() << ":" << color.green() << ":" << color.blue();
+    std::cout << "bck: " << color.red() << ":" << color.green() << ":" << color.blue() << std::endl;
 }

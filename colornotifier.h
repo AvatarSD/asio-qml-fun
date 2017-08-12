@@ -10,13 +10,9 @@ class ColorNotifier : public QObject
 public:
     explicit ColorNotifier(QObject *parent = nullptr);
 
-    Q_PROPERTY(QColor color)
-
-signals:
-
 public slots:
-    void setColor(QColor color);
-    void setBack(QColor color);
+    void setColor(const QColor & color);
+    void setBack (const QColor & color);
 
 };
 
